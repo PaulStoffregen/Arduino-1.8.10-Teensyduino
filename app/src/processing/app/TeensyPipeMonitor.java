@@ -42,8 +42,8 @@ import static processing.app.I18n.tr;
 
 public class TeensyPipeMonitor extends AbstractTextMonitor {
 
-	//public final boolean debug = false;
-	public final boolean debug = true;
+	public final boolean debug = false;
+	//public final boolean debug = true;
 	private String teensyname=null;
 	private String openport=null;
 	Process program=null;
@@ -61,6 +61,7 @@ public class TeensyPipeMonitor extends AbstractTextMonitor {
 			teensyname = "Teensy";
 		}
 		serialRates.hide();
+		addTimeStampBox.hide();
 		disconnect();
 
 		onClearCommand(new ActionListener() {
@@ -176,34 +177,44 @@ public class TeensyPipeMonitor extends AbstractTextMonitor {
 		if (debug) System.out.println("opened, dev=" + device + ", name=" + usbtype);
 		clear();
 		setTitle(device + " (" + teensyname + ") " + usbtype);
-		// setting these to null for system default
-		// gives a wrong gray background on Windows
-		// so assume black text on white background
-		textArea.setForeground(Color.BLACK);
-		textArea.setBackground(Color.WHITE);
 		enableWindow(true);
 	}
 
 	public void disconnect() {
 		if (debug) System.out.println("disconnect");
 		setTitle("[offline] (" + teensyname + ")");
-		//UIDefaults ui = UIManager.getDefaults(); // more trouble than it's worth??
-		Color fg=null, bg=null;
-		//fg = ui.getColor("TextArea.inactiveForeground");
-		//if (fg == null) fg = ui.getColor("TextField.inactiveForeground");
-		//if (fg == null) fg = ui.getColor("TextPane.inactiveForeground");
-		if (fg == null) fg = Color.BLACK;
-		//bg = ui.getColor("TextArea.inactiveBackground");
-		//if (bg == null) bg = ui.getColor("TextField.inactiveBackground");
-		//if (bg == null) bg = ui.getColor("TextPane.inactiveBackground");
-		if (bg == null) bg = new Color(238, 238, 238);
 		enableWindow(false);
-		//System.out.println("disabled foreground = " + fg);
-		//System.out.println("disabled background = " + bg);
-		textArea.setEnabled(true);  // enable so users can copy text to clipboard
-		textArea.setForeground(fg);
-		textArea.setBackground(bg); // but try to make it look sort-of disabled
+	}
+
+	@Override
+	protected void onEnableWindow(boolean enable) {
+		if (debug) System.out.println("onEnableWindow " + enable);
+		// never actually disable textArea, so people can
+		// still select & copy text, even when the port
+		// is closed or disconnected
+		textArea.setEnabled(true);
+		if (enable) {
+			// setting these to null for system default
+			// gives a wrong gray background on Windows
+			// so assume black text on white background
+			textArea.setForeground(Color.BLACK);
+			textArea.setBackground(Color.WHITE);
+		} else {
+			// In theory, UIManager.getDefaults() should
+			// give us the system's colors for disabled
+			// windows.  But it doesn't seem to work.  :(
+			textArea.setForeground(new Color(64, 64, 64));
+			textArea.setBackground(new Color(238, 238, 238));
+		}
 		textArea.invalidate();
+		clearButton.setEnabled(enable);
+		scrollPane.setEnabled(enable);
+		textField.setEnabled(enable);
+		sendButton.setEnabled(enable);
+		autoscrollBox.setEnabled(enable);
+		addTimeStampBox.setEnabled(enable);
+		lineEndings.setEnabled(enable);
+		serialRates.setEnabled(enable);
 	}
 
 	public void window_close() {
